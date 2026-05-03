@@ -2,6 +2,14 @@
 
 Mini Loan Origination System for agent loan submission, credit risk calculation, eligibility checking, and approval by Risk Officer or Head Office.
 
+## Product and Technical Documentation
+
+- PRD: https://khalidalhabibie07.atlassian.net/wiki/external/ZmY1ZGViYTQ0MGViNDUyN2IwOGZmMjhiMTc0MzFkM2E
+- TRD: https://khalidalhabibie07.atlassian.net/wiki/external/OWU4NWQ0MDUyMjUwNDIxOWI1YzJmMjVkYzk0OTA5OGE
+
+The PRD explains the product scope, user flow, business rules, and acceptance criteria.
+The TRD explains the technical design, architecture, database schema, API contract, idempotency, feature flag, Redis, Docker, and implementation rules.
+
 ## Tech Stack
 
 - Java 8
@@ -9,7 +17,7 @@ Mini Loan Origination System for agent loan submission, credit risk calculation,
 - Spring Framework 5.3.24
 - Maven
 - PostgreSQL
-- HikariCP 5.0.1
+- HikariCP 4.0.3
 - Redis 5.0.3
 - Spring Data JPA
 - Spring Data Redis
@@ -25,10 +33,12 @@ Mini Loan Origination System for agent loan submission, credit risk calculation,
 - Java 8
 - Spring Framework 5.3.24
 - Spring Boot 2.x compatible with Spring 5.3.24
-- HikariCP 5.0.1
+- HikariCP 4.0.3
 - Redis 5.0.3
 - Docker 28.0.4
 - PostgreSQL
+
+HikariCP is pinned to `4.0.3` because it is compatible with a Java 8 runtime. HikariCP `5.0.1` is Java 11 bytecode and cannot run safely in the Java 8 Docker runtime used by this service.
 
 ## Architecture
 

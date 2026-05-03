@@ -34,11 +34,13 @@ public class CustomerController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('AGENT','RISK','HO','ADMIN')")
     public ApiResponse<List<CustomerResponse>> all() {
         return ApiResponse.success(customerService.findAll());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('AGENT','RISK','HO','ADMIN')")
     public ApiResponse<CustomerResponse> get(@PathVariable UUID id) {
         return ApiResponse.success(customerService.findById(id));
     }
@@ -50,6 +52,7 @@ public class CustomerController {
     }
 
     @GetMapping("/check-duplicate")
+    @PreAuthorize("hasAnyRole('AGENT','RISK','HO','ADMIN')")
     public ApiResponse<Map<String, Boolean>> duplicate(@RequestParam String nik) {
         return ApiResponse.success(Collections.singletonMap("duplicate", customerService.duplicateNik(nik)));
     }
