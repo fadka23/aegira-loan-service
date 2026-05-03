@@ -8,5 +8,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 @ConfigurationProperties(prefix = "loan.idempotency")
 public class IdempotencyProperties {
+    private boolean enabled = true;
     private long ttlSeconds = 86400;
 }

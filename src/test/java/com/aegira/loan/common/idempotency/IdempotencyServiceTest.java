@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,5 +54,16 @@ class IdempotencyServiceTest {
     void buildsExpectedRedisKey() {
         assertEquals("idempotency:user-1:POST:/submit:key-1",
                 service.buildRedisKey("user-1", "POST:/submit", "key-1"));
+    }
+
+    @Test
+    void disabledIdempotencySkipsRedisAndDoesNotRequireHeader() {
+        IdempotencyProperties properties = new IdempotencyProperties();
+        properties.setEnabled(false);
+        IdempotencyService disabledService = new IdempotencyService(redisTemplate, properties);
+
+        disabledService.checkAndStore("user-1", "POST:/submit", null);
+
+        verify(redisTemplate, never()).opsForValue();
     }
 }

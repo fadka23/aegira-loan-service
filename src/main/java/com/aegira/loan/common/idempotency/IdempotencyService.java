@@ -16,6 +16,9 @@ public class IdempotencyService {
     private final IdempotencyProperties properties;
 
     public void checkAndStore(String userId, String endpoint, String idempotencyKey) {
+        if (!properties.isEnabled()) {
+            return;
+        }
         if (idempotencyKey == null || idempotencyKey.trim().isEmpty()) {
             throw new BadRequestException("Idempotency-Key header is required");
         }

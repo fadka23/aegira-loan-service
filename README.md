@@ -91,13 +91,13 @@ make docker-down
 Run with database mode:
 
 ```bash
-LOAN_DATA_SOURCE_MODE=DATABASE docker-compose up --build
+LOAN_DATA_SOURCE_MODE=DATABASE docker compose up --build
 ```
 
 Run with mock mode:
 
 ```bash
-LOAN_DATA_SOURCE_MODE=MOCK docker-compose up --build
+LOAN_DATA_SOURCE_MODE=MOCK docker compose up --build
 ```
 
 The API runs at `http://localhost:8080`.
@@ -135,6 +135,7 @@ export REDIS_PORT=6379
 export JWT_SECRET=change-this-secret
 export JWT_EXPIRATION=3600000
 export LOAN_DATA_SOURCE_MODE=DATABASE
+export IDEMPOTENCY_ENABLED=true
 export IDEMPOTENCY_TTL_SECONDS=86400
 mvn spring-boot:run
 ```
@@ -186,6 +187,14 @@ idempotency:{userId}:{endpoint}:{idempotencyKey}
 ```
 
 The TTL is controlled by `IDEMPOTENCY_TTL_SECONDS`, defaulting to `86400` seconds. Reusing the same key for the same user and endpoint returns `409 CONFLICT` with message `Duplicate request detected`.
+
+Idempotency can be disabled for local development:
+
+```bash
+IDEMPOTENCY_ENABLED=false make run
+```
+
+When disabled, protected endpoints do not require the `Idempotency-Key` header and Redis idempotency checks are skipped.
 
 ## Application Flow
 
@@ -245,6 +254,30 @@ CustomerID is used as the business `correlationId` during loan application flow.
 
 A `requestId` may still be generated per HTTP request for technical tracing.
 
+## API JSON Naming Convention
+
+All API request and response fields use `snake_case`. Java code still uses `camelCase` internally.
+
+Example:
+
+```text
+customerId in Java becomes customer_id in JSON.
+```
+
+Enum values stay `UPPER_SNAKE_CASE`, for example `WAITING_RISK_REVIEW`.
+
+## Frontend Consumption APIs
+
+The backend provides UI-friendly APIs to reduce frontend complexity:
+
+- dashboard summary APIs: `/api/v1/dashboard/agent/summary`, `/api/v1/dashboard/risk/summary`, `/api/v1/dashboard/ho/summary`
+- application list API with filters: `/api/v1/loan-applications`
+- application detail aggregate API: `/api/v1/loan-applications/{id}/detail`
+- options APIs for dropdowns: `/api/v1/options/loan-products`, `/api/v1/options/customers`
+- approval task list API: `/api/v1/approval-tasks`
+
+Frontend detail screens should use `/api/v1/loan-applications/{id}/detail` to avoid calling customer, product, calculation, eligibility, and approval history APIs separately.
+
 ## Environment Variables
 
 | Variable | Purpose |
@@ -257,6 +290,7 @@ A `requestId` may still be generated per HTTP request for technical tracing.
 | `JWT_SECRET` | JWT signing secret input |
 | `JWT_EXPIRATION` | JWT expiration in milliseconds |
 | `LOAN_DATA_SOURCE_MODE` | `DATABASE` or `MOCK` |
+| `IDEMPOTENCY_ENABLED` | Enable or disable Redis idempotency checks |
 | `IDEMPOTENCY_TTL_SECONDS` | Redis TTL for idempotency keys |
 | `DB_MAX_POOL_SIZE` | Hikari maximum pool size |
 | `DB_MIN_IDLE` | Hikari minimum idle connections |
@@ -289,14 +323,14 @@ curl -s -X POST http://localhost:8080/api/v1/customers \
   -d '{
     "nik":"3173000000000001",
     "name":"Rina Saputra",
-    "phoneNumber":"081234567890",
-    "dateOfBirth":"1990-01-15",
+    "phone_number":"081234567890",
+    "date_of_birth":"1990-01-15",
     "address":"Jakarta",
-    "maritalStatus":"MARRIED",
-    "jobType":"EMPLOYEE",
-    "monthlyIncome":8000000,
-    "monthlyExpense":2500000,
-    "existingInstallment":500000
+    "marital_status":"MARRIED",
+    "job_type":"EMPLOYEE",
+    "monthly_income":8000000,
+    "monthly_expense":2500000,
+    "existing_installment":500000
   }'
 ```
 
@@ -307,11 +341,11 @@ curl -s -X POST http://localhost:8080/api/v1/loan-applications \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{
-    "customerId":"paste-customer-id",
-    "loanProductId":"10000000-0000-0000-0000-000000000001",
-    "requestedAmount":25000000,
-    "requestedTenure":12,
-    "loanPurpose":"Home renovation"
+    "customer_id":"paste-customer-id",
+    "loan_product_id":"10000000-0000-0000-0000-000000000001",
+    "requested_amount":25000000,
+    "requested_tenure":12,
+    "loan_purpose":"Home renovation"
   }'
 ```
 
@@ -331,7 +365,42 @@ curl -s -X POST http://localhost:8080/api/v1/loan-applications/paste-application
   -H "Authorization: Bearer $RISK_TOKEN" \
   -H 'Idempotency-Key: 52a2f396-9272-4f1b-aa83-f38c85ac7981' \
   -H 'Content-Type: application/json' \
-  -d '{"approvedAmount":25000000,"notes":"Within policy"}'
+  -d '{"approved_amount":25000000,"notes":"Within policy"}'
+```
+
+Get agent dashboard summary:
+
+```bash
+curl -s http://localhost:8080/api/v1/dashboard/agent/summary \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Get application list:
+
+```bash
+curl -s 'http://localhost:8080/api/v1/loan-applications?page=0&size=10&status=WAITING_RISK_REVIEW&risk_level=MEDIUM' \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Get application detail aggregate:
+
+```bash
+curl -s http://localhost:8080/api/v1/loan-applications/paste-application-id/detail \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Get loan product options:
+
+```bash
+curl -s http://localhost:8080/api/v1/options/loan-products \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Get approval task list:
+
+```bash
+curl -s 'http://localhost:8080/api/v1/approval-tasks?page=0&size=10' \
+  -H "Authorization: Bearer $RISK_TOKEN"
 ```
 
 View calculation, eligibility, histories, and audit logs:

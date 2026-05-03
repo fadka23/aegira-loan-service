@@ -1,6 +1,7 @@
 package com.aegira.loan.loanapplication;
 
 import com.aegira.loan.audit.service.AuditService;
+import com.aegira.loan.approval.repository.ApprovalHistoryRepository;
 import com.aegira.loan.calculation.entity.LoanCalculation;
 import com.aegira.loan.calculation.repository.LoanCalculationRepository;
 import com.aegira.loan.calculation.service.LoanCalculationService;
@@ -63,7 +64,15 @@ class LoanApplicationServiceMockModeTest {
         when(applicationRepository.findById(application.getId())).thenReturn(Optional.of(application));
 
         LoanApplicationService service = new LoanApplicationService(
-                applicationRepository, resolver, securityUtil, calculationService, eligibilityService, auditService);
+                applicationRepository,
+                resolver,
+                securityUtil,
+                calculationService,
+                calculationRepository,
+                eligibilityService,
+                eligibilityRepository,
+                mock(ApprovalHistoryRepository.class),
+                auditService);
 
         LoanApplicationResponse response = service.submit(application.getId());
 

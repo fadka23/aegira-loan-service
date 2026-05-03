@@ -1,4 +1,6 @@
 spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/aegira_loan}
     username: ${SPRING_DATASOURCE_USERNAME:aegira}
@@ -38,6 +40,7 @@ loan:
   data-source:
     mode: ${LOAN_DATA_SOURCE_MODE:DATABASE}
   idempotency:
+    enabled: ${IDEMPOTENCY_ENABLED:true}
     ttl-seconds: ${IDEMPOTENCY_TTL_SECONDS:86400}
 
 logging:
