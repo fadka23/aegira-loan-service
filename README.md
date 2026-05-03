@@ -118,6 +118,12 @@ Swagger UI:
 http://localhost:8080/swagger-ui.html
 ```
 
+Static OpenAPI spec, usable without running the service:
+
+```text
+docs/openapi.json
+```
+
 PostgreSQL:
 
 - Database: `aegira_loan`

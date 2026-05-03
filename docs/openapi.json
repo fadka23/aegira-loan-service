@@ -1,0 +1,2647 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Aegira Loan Service API",
+    "description": "Mini Loan Origination System flow: 1. Agent creates customer. 2. Agent creates loan application. 3. Agent submits loan application. 4. Backend calculates installment and DSR. 5. Backend checks eligibility. 6. Risk Officer reviews application. 7. HO approves if required. DSR calculation uses current DSR = existing monthly installment / monthly income * 100 and projected DSR = (existing monthly installment + new monthly installment) / monthly income * 100. Loan submission can use DATABASE or MOCK data through feature flag loan.data-source.mode. Submit and approval endpoints require Idempotency-Key and use Redis-based idempotency. CustomerID is used as correlationId for debugging and audit traceability.",
+    "version": "v1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/api/v1/loan-products/{id}": {
+      "get": {
+        "tags": [
+          "loan-product-controller"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanProductResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "loan-product-controller"
+        ],
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanProductRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanProductResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "loan-product-controller"
+        ],
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}": {
+      "get": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "operationId": "get_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanApplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/{id}": {
+      "get": {
+        "tags": [
+          "customer-controller"
+        ],
+        "operationId": "get_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCustomerResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "customer-controller"
+        ],
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCustomerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-products": {
+      "get": {
+        "tags": [
+          "loan-product-controller"
+        ],
+        "operationId": "all",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListLoanProductResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "loan-product-controller"
+        ],
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanProductRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanProductResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications": {
+      "get": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "summary": "Loan application list for UI",
+        "description": "Returns paginated application list with customer, latest calculation, status, and risk fields. AGENT sees own applications. RISK, HO, and ADMIN see all applications.",
+        "operationId": "all_1",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "WAITING_RISK_REVIEW",
+                "RISK_APPROVED",
+                "RISK_REJECTED",
+                "REVISION_REQUESTED",
+                "WAITING_HO_APPROVAL",
+                "HO_APPROVED",
+                "HO_REJECTED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "risk_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH"
+              ]
+            }
+          },
+          {
+            "name": "customer_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "application_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseLoanApplicationListItemResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "operationId": "create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoanApplicationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/submit": {
+      "post": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "summary": "Submit loan application",
+        "description": "The submit endpoint calculates loan installment, current DSR, projected DSR, eligibility, and risk level. The data source can be controlled by feature flag loan.data-source.mode. MOCK mode uses mock customer and loan product data. DATABASE mode uses PostgreSQL data. CustomerID is used as correlationId for debugging and audit traceability. This endpoint is protected by Redis-based idempotency. Clients must send a unique Idempotency-Key for each new submit action. Reusing the same key will be treated as a duplicate request.",
+        "operationId": "submit",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Unique key for this submit request.",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/risk/request-revision": {
+      "post": {
+        "tags": [
+          "approval-controller"
+        ],
+        "summary": "Risk request revision",
+        "description": "This endpoint is protected by Redis-based idempotency. Clients must send a unique Idempotency-Key for each new approval action. Reusing the same key will be treated as a duplicate request.",
+        "operationId": "requestRevision",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Unique key for this risk revision request.",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/risk/reject": {
+      "post": {
+        "tags": [
+          "approval-controller"
+        ],
+        "summary": "Risk reject loan application",
+        "description": "This endpoint is protected by Redis-based idempotency. Clients must send a unique Idempotency-Key for each new approval action. Reusing the same key will be treated as a duplicate request.",
+        "operationId": "riskReject",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Unique key for this risk rejection request.",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/risk/approve": {
+      "post": {
+        "tags": [
+          "approval-controller"
+        ],
+        "summary": "Risk approve loan application",
+        "description": "This endpoint is protected by Redis-based idempotency. Clients must send a unique Idempotency-Key for each new approval action. Reusing the same key will be treated as a duplicate request.",
+        "operationId": "riskApprove",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Unique key for this risk approval request.",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/ho/reject": {
+      "post": {
+        "tags": [
+          "approval-controller"
+        ],
+        "summary": "HO reject loan application",
+        "description": "This endpoint is protected by Redis-based idempotency. Clients must send a unique Idempotency-Key for each new approval action. Reusing the same key will be treated as a duplicate request.",
+        "operationId": "hoReject",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Unique key for this HO rejection request.",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/ho/approve": {
+      "post": {
+        "tags": [
+          "approval-controller"
+        ],
+        "summary": "HO approve loan application",
+        "description": "This endpoint is protected by Redis-based idempotency. Clients must send a unique Idempotency-Key for each new approval action. Reusing the same key will be treated as a duplicate request.",
+        "operationId": "hoApprove",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Unique key for this HO approval request.",
+            "required": true
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers": {
+      "get": {
+        "tags": [
+          "customer-controller"
+        ],
+        "operationId": "all_2",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListCustomerResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "customer-controller"
+        ],
+        "operationId": "create_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCustomerResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoginResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/options/loan-products": {
+      "get": {
+        "tags": [
+          "options-controller"
+        ],
+        "summary": "Loan product dropdown options",
+        "description": "Returns active loan products for frontend dropdown controls.",
+        "operationId": "loanProducts",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListLoanProductOptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/options/customers": {
+      "get": {
+        "tags": [
+          "options-controller"
+        ],
+        "summary": "Customer dropdown options",
+        "description": "Returns customer options for agent UI. MVP returns all customers because customer ownership is not modeled yet.",
+        "operationId": "customers",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListCustomerOptionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/eligibility": {
+      "get": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "operationId": "eligibility",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListEligibilityResultResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/detail": {
+      "get": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "summary": "Loan application detail aggregate for UI",
+        "description": "Returns customer, loan product, loan request, latest calculation, eligibility results, and approval histories in one API call. UI should use this endpoint to avoid calling many APIs separately.",
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanApplicationDetailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/calculation": {
+      "get": {
+        "tags": [
+          "loan-application-controller"
+        ],
+        "operationId": "calculation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoanCalculationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/audit-logs": {
+      "get": {
+        "tags": [
+          "audit-controller"
+        ],
+        "operationId": "logs",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListAuditLogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/loan-applications/{id}/approval-histories": {
+      "get": {
+        "tags": [
+          "approval-controller"
+        ],
+        "operationId": "histories",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListApprovalHistoryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/risk/summary": {
+      "get": {
+        "tags": [
+          "dashboard-controller"
+        ],
+        "summary": "Risk dashboard summary",
+        "description": "Returns waiting review and risk workload metrics for Risk Officer UI.",
+        "operationId": "riskSummary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseRiskDashboardSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/ho/summary": {
+      "get": {
+        "tags": [
+          "dashboard-controller"
+        ],
+        "summary": "HO dashboard summary",
+        "description": "Returns Head Office approval workload metrics for HO UI.",
+        "operationId": "hoSummary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseHoDashboardSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dashboard/agent/summary": {
+      "get": {
+        "tags": [
+          "dashboard-controller"
+        ],
+        "summary": "Agent dashboard summary",
+        "description": "Returns application counts for the current agent only.",
+        "operationId": "agentSummary",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAgentDashboardSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/customers/check-duplicate": {
+      "get": {
+        "tags": [
+          "customer-controller"
+        ],
+        "operationId": "duplicate",
+        "parameters": [
+          {
+            "name": "nik",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMapStringBoolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "auth-controller"
+        ],
+        "operationId": "me",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLoginResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/approval-tasks": {
+      "get": {
+        "tags": [
+          "approval-task-controller"
+        ],
+        "summary": "Approval task list",
+        "description": "Returns approval work queue for the current approver. RISK receives WAITING_RISK_REVIEW applications. HO receives WAITING_HO_APPROVAL applications.",
+        "operationId": "tasks",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseApprovalTaskItemResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "LoanProductRequest": {
+        "required": [
+          "active",
+          "annual_interest_rate",
+          "max_amount",
+          "max_tenure",
+          "maximum_dsr",
+          "min_amount",
+          "min_tenure",
+          "minimum_income",
+          "name",
+          "need_collateral"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "min_amount": {
+            "minimum": 0.00,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "max_amount": {
+            "type": "number"
+          },
+          "min_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "max_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "annual_interest_rate": {
+            "type": "number"
+          },
+          "minimum_income": {
+            "type": "number"
+          },
+          "maximum_dsr": {
+            "type": "number"
+          },
+          "need_collateral": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseLoanProductResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoanProductResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LoanProductResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "min_amount": {
+            "type": "number"
+          },
+          "max_amount": {
+            "type": "number"
+          },
+          "min_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "max_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "annual_interest_rate": {
+            "type": "number"
+          },
+          "minimum_income": {
+            "type": "number"
+          },
+          "maximum_dsr": {
+            "type": "number"
+          },
+          "need_collateral": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LoanApplicationRequest": {
+        "required": [
+          "customer_id",
+          "loan_product_id",
+          "loan_purpose",
+          "requested_amount",
+          "requested_tenure"
+        ],
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requested_amount": {
+            "type": "number"
+          },
+          "requested_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "loan_purpose": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseLoanApplicationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoanApplicationResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LoanApplicationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_number": {
+            "type": "string"
+          },
+          "customer_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "agent_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_product_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requested_amount": {
+            "type": "number"
+          },
+          "requested_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "loan_purpose": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "WAITING_RISK_REVIEW",
+              "RISK_APPROVED",
+              "RISK_REJECTED",
+              "REVISION_REQUESTED",
+              "WAITING_HO_APPROVAL",
+              "HO_APPROVED",
+              "HO_REJECTED",
+              "CANCELLED"
+            ]
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CustomerRequest": {
+        "required": [
+          "address",
+          "date_of_birth",
+          "existing_installment",
+          "monthly_expense",
+          "monthly_income",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "nik": {
+            "pattern": "\\d{16}",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date"
+          },
+          "address": {
+            "type": "string"
+          },
+          "marital_status": {
+            "type": "string"
+          },
+          "job_type": {
+            "type": "string"
+          },
+          "monthly_income": {
+            "minimum": 0.00,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "monthly_expense": {
+            "minimum": 0.00,
+            "exclusiveMinimum": false,
+            "type": "number"
+          },
+          "existing_installment": {
+            "minimum": 0.00,
+            "exclusiveMinimum": false,
+            "type": "number"
+          }
+        }
+      },
+      "ApiResponseCustomerResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CustomerResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CustomerResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nik": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date"
+          },
+          "address": {
+            "type": "string"
+          },
+          "marital_status": {
+            "type": "string"
+          },
+          "job_type": {
+            "type": "string"
+          },
+          "monthly_income": {
+            "type": "number"
+          },
+          "monthly_expense": {
+            "type": "number"
+          },
+          "existing_installment": {
+            "type": "number"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApprovalRequest": {
+        "type": "object",
+        "properties": {
+          "approved_amount": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "LoginRequest": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseLoginResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoginResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "AGENT",
+              "RISK",
+              "HO",
+              "ADMIN"
+            ]
+          }
+        }
+      },
+      "ApiResponseListLoanProductOptionResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoanProductOptionResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LoanProductOptionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "min_amount": {
+            "type": "number"
+          },
+          "max_amount": {
+            "type": "number"
+          },
+          "min_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "max_tenure": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResponseListCustomerOptionResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerOptionResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CustomerOptionResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "nik": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponseListLoanProductResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoanProductResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiResponsePageResponseLoanApplicationListItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseLoanApplicationListItemResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LoanApplicationListItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_number": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "customer_nik": {
+            "type": "string"
+          },
+          "requested_amount": {
+            "type": "number"
+          },
+          "requested_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "monthly_installment": {
+            "type": "number"
+          },
+          "projected_dsr": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "WAITING_RISK_REVIEW",
+              "RISK_APPROVED",
+              "RISK_REJECTED",
+              "REVISION_REQUESTED",
+              "WAITING_HO_APPROVAL",
+              "HO_APPROVED",
+              "HO_REJECTED",
+              "CANCELLED"
+            ]
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseLoanApplicationListItemResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoanApplicationListItemResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_elements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseListEligibilityResultResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EligibilityResultResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "EligibilityResultResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rule_name": {
+            "type": "string",
+            "enum": [
+              "MINIMUM_AGE",
+              "MAXIMUM_AGE_AT_MATURITY",
+              "MINIMUM_INCOME",
+              "LOAN_AMOUNT_LIMIT",
+              "TENURE_LIMIT",
+              "DSR_LIMIT",
+              "DUPLICATE_ACTIVE_APPLICATION"
+            ]
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseLoanApplicationDetailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoanApplicationDetailResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApprovalHistoryDetail": {
+        "type": "object",
+        "properties": {
+          "approver_name": {
+            "type": "string"
+          },
+          "approver_role": {
+            "type": "string"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CalculationDetail": {
+        "type": "object",
+        "properties": {
+          "total_interest": {
+            "type": "number"
+          },
+          "total_payment": {
+            "type": "number"
+          },
+          "monthly_installment": {
+            "type": "number"
+          },
+          "current_dsr": {
+            "type": "number"
+          },
+          "projected_dsr": {
+            "type": "number"
+          },
+          "eligible": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CustomerDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nik": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "format": "date"
+          },
+          "monthly_income": {
+            "type": "number"
+          },
+          "monthly_expense": {
+            "type": "number"
+          },
+          "existing_installment": {
+            "type": "number"
+          }
+        }
+      },
+      "EligibilityDetail": {
+        "type": "object",
+        "properties": {
+          "rule_code": {
+            "type": "string"
+          },
+          "rule_name": {
+            "type": "string"
+          },
+          "passed": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "LoanApplicationDetailResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "WAITING_RISK_REVIEW",
+              "RISK_APPROVED",
+              "RISK_REJECTED",
+              "REVISION_REQUESTED",
+              "WAITING_HO_APPROVAL",
+              "HO_APPROVED",
+              "HO_REJECTED",
+              "CANCELLED"
+            ]
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "customer": {
+            "$ref": "#/components/schemas/CustomerDetail"
+          },
+          "loan_product": {
+            "$ref": "#/components/schemas/LoanProductDetail"
+          },
+          "loan": {
+            "$ref": "#/components/schemas/LoanDetail"
+          },
+          "calculation": {
+            "$ref": "#/components/schemas/CalculationDetail"
+          },
+          "eligibility_results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EligibilityDetail"
+            }
+          },
+          "approval_histories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalHistoryDetail"
+            }
+          }
+        }
+      },
+      "LoanDetail": {
+        "type": "object",
+        "properties": {
+          "requested_amount": {
+            "type": "number"
+          },
+          "requested_tenure": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "loan_purpose": {
+            "type": "string"
+          }
+        }
+      },
+      "LoanProductDetail": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "annual_interest_rate": {
+            "type": "number"
+          },
+          "maximum_dsr": {
+            "type": "number"
+          }
+        }
+      },
+      "ApiResponseLoanCalculationResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LoanCalculationResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "LoanCalculationResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_amount": {
+            "type": "number"
+          },
+          "annual_interest_rate": {
+            "type": "number"
+          },
+          "tenure_month": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_interest": {
+            "type": "number"
+          },
+          "total_payment": {
+            "type": "number"
+          },
+          "monthly_installment": {
+            "type": "number"
+          },
+          "existing_installment": {
+            "type": "number"
+          },
+          "monthly_income": {
+            "type": "number"
+          },
+          "current_dsr": {
+            "type": "number"
+          },
+          "projected_dsr": {
+            "type": "number"
+          },
+          "maximum_dsr": {
+            "type": "number"
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseListAuditLogResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "AuditLogResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entity_type": {
+            "type": "string"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "performed_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "old_value": {
+            "type": "string"
+          },
+          "new_value": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseListApprovalHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalHistoryResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApprovalHistoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_application_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "performed_by": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "decision": {
+            "type": "string",
+            "enum": [
+              "RISK_APPROVE",
+              "RISK_REJECT",
+              "RISK_REQUEST_REVISION",
+              "HO_APPROVE",
+              "HO_REJECT"
+            ]
+          },
+          "approved_amount": {
+            "type": "number"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "correlation_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiResponseRiskDashboardSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RiskDashboardSummaryResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RiskDashboardSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "total_waiting_risk_review": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_medium_risk": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_high_risk": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_approved_today": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_rejected_today": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ApiResponseHoDashboardSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HoDashboardSummaryResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "HoDashboardSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "total_waiting_ho_approval": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_approved_today": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_rejected_today": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "AgentDashboardSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "total_draft": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_waiting_risk_review": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_approved": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_rejected": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_revision_requested": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "ApiResponseAgentDashboardSummaryResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AgentDashboardSummaryResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiResponseListCustomerResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerResponse"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiResponseMapStringBoolean": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApiResponsePageResponseApprovalTaskItemResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseApprovalTaskItemResponse"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ApprovalTaskItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "application_number": {
+            "type": "string"
+          },
+          "customer_name": {
+            "type": "string"
+          },
+          "requested_amount": {
+            "type": "number"
+          },
+          "projected_dsr": {
+            "type": "number"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "WAITING_RISK_REVIEW",
+              "RISK_APPROVED",
+              "RISK_REJECTED",
+              "REVISION_REQUESTED",
+              "WAITING_HO_APPROVAL",
+              "HO_APPROVED",
+              "HO_REJECTED",
+              "CANCELLED"
+            ]
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseApprovalTaskItemResponse": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalTaskItemResponse"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total_elements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "last": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ApiResponseVoid": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          },
+          "error": {
+            "type": "string"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
