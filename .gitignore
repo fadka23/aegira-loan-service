@@ -1,0 +1,40 @@
+# Maven build output
+target/
+*.class
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.properties
+
+# IDE/editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker/local volumes or generated data
+docker-data/
+postgres_data/
+redis_data/
+
+# Tooling/runtime metadata
+.codex/
+.agents/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
