@@ -31,8 +31,8 @@ postgres_data/
 redis_data/
 
 # Tooling/runtime metadata
-.codex/
-.agents/
+.code*
+.agent*
 
 # Temporary files
 *.tmp
