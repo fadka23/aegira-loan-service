@@ -6,6 +6,7 @@ import com.aegira.loan.approval.service.ApprovalTaskService;
 import com.aegira.loan.calculation.entity.LoanCalculation;
 import com.aegira.loan.calculation.repository.LoanCalculationRepository;
 import com.aegira.loan.common.dto.PageResponse;
+import com.aegira.loan.common.exception.ForbiddenException;
 import com.aegira.loan.common.security.SecurityUtil;
 import com.aegira.loan.customer.entity.Customer;
 import com.aegira.loan.loanapplication.entity.ApplicationStatus;
@@ -25,7 +26,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class ApprovalTaskServiceTest {
@@ -69,6 +72,15 @@ class ApprovalTaskServiceTest {
 
         assertEquals(1, result.getTotalElements());
         assertEquals(ApplicationStatus.WAITING_HO_APPROVAL, result.getContent().get(0).getStatus());
+    }
+
+    @Test
+    void shouldRejectRoleWhenNotAllowedToAccessApprovalTask() {
+        when(securityUtil.currentUser()).thenReturn(user(Role.AGENT));
+
+        assertThrows(ForbiddenException.class, () -> service.tasks(new ApprovalTaskFilter()));
+
+        verifyNoInteractions(applicationRepository, calculationRepository);
     }
 
     private LoanApplication application(ApplicationStatus status) {

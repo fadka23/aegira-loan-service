@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.slf4j.MDC;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +19,7 @@ public class ApiResponse<T> {
     private T data;
     private String error;
     private List<String> details;
+    private String correlationId;
 
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder().success(true).message("Success").data(data).build();
@@ -29,6 +31,7 @@ public class ApiResponse<T> {
                 .error(error)
                 .message(message)
                 .details(details == null ? Collections.emptyList() : details)
+                .correlationId(MDC.get("correlation_id"))
                 .build();
     }
 }

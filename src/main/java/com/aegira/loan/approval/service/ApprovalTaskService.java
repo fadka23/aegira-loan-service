@@ -13,6 +13,7 @@ import com.aegira.loan.loanapplication.repository.LoanApplicationRepository;
 import com.aegira.loan.user.entity.Role;
 import com.aegira.loan.user.entity.User;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ApprovalTaskService {
     private final LoanApplicationRepository loanApplicationRepository;
     private final LoanCalculationRepository loanCalculationRepository;
@@ -36,6 +38,7 @@ public class ApprovalTaskService {
         } else if (user.getRole() == Role.HO) {
             status = ApplicationStatus.WAITING_HO_APPROVAL;
         } else {
+            log.warn("event_name=access_denied user_id={} role={} error_code=FORBIDDEN", user.getId(), user.getRole());
             throw new ForbiddenException("Only RISK or HO can view approval tasks");
         }
         List<ApprovalTaskItemResponse> items = loanApplicationRepository.findByStatus(status).stream()

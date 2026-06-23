@@ -48,10 +48,10 @@ public class ApprovalService {
             application.setStatus(next);
             createHistory(application, ApprovalDecision.RISK_APPROVE, approvedAmount, emptyToDash(safeRequest.getNotes()));
             audit(application, "RISK_APPROVE", old, next, safeRequest.getNotes());
-            log.info("risk approved applicationId={} approvedAmount={} nextStatus={}", id, approvedAmount, next);
+            log.info("event_name=loan_application_approved resource_id={} approved_amount={} next_status={}", id, approvedAmount, next);
             return loanApplicationService.toResponse(application);
         } finally {
-            MDC.remove("correlationId");
+            MDC.remove("business_correlation_id");
         }
     }
 
@@ -66,9 +66,10 @@ public class ApprovalService {
             application.setStatus(ApplicationStatus.RISK_REJECTED);
             createHistory(application, ApprovalDecision.RISK_REJECT, null, request.getNotes());
             audit(application, "RISK_REJECT", old, application.getStatus(), request.getNotes());
+            log.warn("event_name=loan_application_rejected resource_id={} role=RISK", id);
             return loanApplicationService.toResponse(application);
         } finally {
-            MDC.remove("correlationId");
+            MDC.remove("business_correlation_id");
         }
     }
 
@@ -85,7 +86,7 @@ public class ApprovalService {
             audit(application, "RISK_REQUEST_REVISION", old, application.getStatus(), request.getNotes());
             return loanApplicationService.toResponse(application);
         } finally {
-            MDC.remove("correlationId");
+            MDC.remove("business_correlation_id");
         }
     }
 
@@ -102,7 +103,7 @@ public class ApprovalService {
             audit(application, "HO_APPROVE", old, application.getStatus(), safeRequest.getNotes());
             return loanApplicationService.toResponse(application);
         } finally {
-            MDC.remove("correlationId");
+            MDC.remove("business_correlation_id");
         }
     }
 
@@ -117,9 +118,10 @@ public class ApprovalService {
             application.setStatus(ApplicationStatus.HO_REJECTED);
             createHistory(application, ApprovalDecision.HO_REJECT, null, request.getNotes());
             audit(application, "HO_REJECT", old, application.getStatus(), request.getNotes());
+            log.warn("event_name=loan_application_rejected resource_id={} role=HO", id);
             return loanApplicationService.toResponse(application);
         } finally {
-            MDC.remove("correlationId");
+            MDC.remove("business_correlation_id");
         }
     }
 
@@ -162,7 +164,7 @@ public class ApprovalService {
     }
 
     private void withCorrelation(LoanApplication application) {
-        MDC.put("correlationId", application.getCustomer().getId().toString());
+        MDC.put("business_correlation_id", application.getCustomer().getId().toString());
     }
 
     private ApprovalHistoryResponse toResponse(ApprovalHistory history) {

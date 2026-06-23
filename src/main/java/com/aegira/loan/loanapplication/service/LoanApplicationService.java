@@ -173,7 +173,7 @@ public class LoanApplicationService {
     @Transactional
     public LoanApplicationResponse submit(UUID id) {
         LoanApplication application = getVisible(id);
-        MDC.put("correlationId", application.getCustomer().getId().toString());
+        MDC.put("business_correlation_id", application.getCustomer().getId().toString());
         try {
             if (application.getStatus() != ApplicationStatus.DRAFT && application.getStatus() != ApplicationStatus.REVISION_REQUESTED) {
                 throw new BadRequestException("Only draft or revision requested applications can be submitted");
@@ -189,10 +189,10 @@ public class LoanApplicationService {
             auditService.log("LOAN_APPLICATION", application.getId(), "SUBMIT", securityUtil.currentUser(), "DRAFT",
                     application.getStatus().name(), "eligible=" + results.stream().allMatch(EligibilityResult::getPassed),
                     application.getCustomer().getId().toString());
-            log.info("loan application submitted applicationId={} status={} riskLevel={}", application.getId(), application.getStatus(), application.getRiskLevel());
+            log.info("event_name=loan_application_submitted application_id={} status={} risk_level={}", application.getId(), application.getStatus(), application.getRiskLevel());
             return toResponse(application);
         } finally {
-            MDC.remove("correlationId");
+            MDC.remove("business_correlation_id");
         }
     }
 

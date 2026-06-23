@@ -2,6 +2,7 @@ package com.aegira.loan.audit.service;
 
 import com.aegira.loan.audit.entity.AuditLog;
 import com.aegira.loan.audit.repository.AuditLogRepository;
+import com.aegira.loan.common.security.PiiRedactionUtil;
 import com.aegira.loan.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,11 +24,11 @@ public class AuditService {
         auditLog.setEntityId(entityId);
         auditLog.setAction(action);
         auditLog.setPerformedBy(performedBy);
-        auditLog.setOldValue(oldValue);
-        auditLog.setNewValue(newValue);
-        auditLog.setNotes(notes);
+        auditLog.setOldValue(PiiRedactionUtil.sanitize(oldValue));
+        auditLog.setNewValue(PiiRedactionUtil.sanitize(newValue));
+        auditLog.setNotes(PiiRedactionUtil.sanitize(notes));
         auditLog.setCorrelationId(correlationId);
-        log.info("audit action={} entityType={} entityId={}", action, entityType, entityId);
+        log.info("event_name=audit_recorded action={} entity_type={} resource_id={}", action, entityType, entityId);
         return auditLogRepository.save(auditLog);
     }
 

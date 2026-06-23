@@ -266,9 +266,11 @@ Use `DATABASE` mode when:
 
 ## Debugging and Correlation ID
 
-CustomerID is used as the business `correlationId` during loan application flow. The `correlationId` is included in logs, calculation process, eligibility process, approval process, and audit log. This helps developers trace all backend actions related to the same customer.
+Use the `X-Correlation-Id` request header for technical request tracing. If absent, the service falls back to `X-Request-Id` and then generates an ID. Error responses include `correlation_id`.
 
-A `requestId` may still be generated per HTTP request for technical tracing.
+CustomerID remains a separate business correlation value in the loan application flow and audit records.
+
+Run the test suite with `mvn test`. Do not log raw PII, tokens, or passwords, and use [CODE_REVIEW_CHECKLIST.md](CODE_REVIEW_CHECKLIST.md) before opening a PR.
 
 ## API JSON Naming Convention
 

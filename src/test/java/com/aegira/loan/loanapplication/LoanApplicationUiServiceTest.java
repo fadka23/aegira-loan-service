@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class LoanApplicationUiServiceTest {
@@ -98,6 +99,7 @@ class LoanApplicationUiServiceTest {
         when(applicationRepository.findById(application.getId())).thenReturn(Optional.of(application));
 
         assertThrows(ForbiddenException.class, () -> service.detail(application.getId()));
+        verifyNoInteractions(calculationRepository, eligibilityRepository, approvalHistoryRepository);
     }
 
     private LoanApplication application(User agent) {
