@@ -2,7 +2,7 @@
 
 Mini Loan Origination System for agent loan submission, credit risk calculation, eligibility checking, and approval by Risk Officer or Head Office.
 
-## Product and Technical Documentation
+## Product and Technical Documentationn
 
 - PRD: https://khalidalhabibie07.atlassian.net/wiki/external/ZmY1ZGViYTQ0MGViNDUyN2IwOGZmMjhiMTc0MzFkM2E
 - TRD: https://khalidalhabibie07.atlassian.net/wiki/external/OWU4NWQ0MDUyMjUwNDIxOWI1YzJmMjVkYzk0OTA5OGE
